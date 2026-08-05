@@ -35,9 +35,8 @@
     background:radial-gradient(ellipse at top, var(--navy-glow), var(--navy-deep) 70%);
     color:var(--parchment);
     overflow-x:hidden;
-    overflow-y:auto;
+    overflow-y:auto; /* เปิดให้เลื่อนหน้าจอหลักได้ตามปกติ */
     -webkit-overflow-scrolling:touch;
-    overscroll-behavior-y:contain;
     -webkit-tap-highlight-color:transparent;
     user-select:none;
   }
@@ -46,32 +45,34 @@
     width:100%;
     min-height:100vh;
     min-height:100dvh;
-    display:flex;align-items:center;justify-content:center;
-    padding:clamp(8px,2vh,20px) clamp(8px,2vw,20px);
-    padding-top:calc(env(safe-area-inset-top,0px) + clamp(8px,2vh,20px));
-    padding-bottom:calc(env(safe-area-inset-bottom,0px) + clamp(8px,2vh,20px));
+    display:flex;
+    /* นำ alignItems ออกเพื่อให้กรอบยืดทะลุขอบบน-ล่างได้ถ้าเนื้อหายาวเกินไป */
+    padding:clamp(16px,3vh,30px) clamp(10px,3vw,20px);
   }
   #frame{
     position:relative;
-    width:min(100%, 177.78vh, 177.78dvh);
+    width:100%;
     max-width:1100px;
-    aspect-ratio:16/9;
-    max-height:calc(100dvh - 16px);
+    min-height:85vh; /* ความสูงขั้นต่ำ */
+    height:auto; /* ปล่อยให้ความสูงยืดตามเนื้อหา (ทะลุกรอบ) */
     background:linear-gradient(180deg, var(--navy-glow), var(--navy-deep));
     border-radius:18px;
-    overflow-x:hidden;
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
-    overscroll-behavior-y:contain;
+    overflow:hidden;
     box-shadow:0 20px 60px rgba(0,0,0,.6), inset 0 0 0 3px rgba(242,193,78,.25);
     margin:auto;
+    display:flex;
+    flex-direction:column;
   }
+  
+  /* เปลี่ยนจากการล็อกตายตัว (absolute) เป็น Flow ปกติ */
   .scene{
-    position:absolute;inset:0;
     display:none;
     flex-direction:column;
-    align-items:center;justify-content:center;
-    padding:clamp(10px,2.5vw,28px);
+    align-items:center;
+    justify-content:center;
+    padding:clamp(60px,8vw,80px) clamp(16px,4vw,32px);
+    width:100%;
+    flex-grow:1;
   }
   .scene.active{display:flex;}
 
@@ -80,25 +81,26 @@
     position:absolute;bottom:-40px;border-radius:50%;
     background:rgba(255,255,255,.10);
     animation:rise linear infinite;
+    pointer-events:none;
   }
   @keyframes rise{
-    to{ transform:translateY(-120vh) translateX(var(--drift,0px)); opacity:0; }
+    to{ transform:translateY(-150vh) translateX(var(--drift,0px)); opacity:0; }
   }
 
   /* ---------- TITLE SCENE ---------- */
-  #scene-title{gap:clamp(6px,1.5vh,14px); text-align:center;}
-  .flag{font-size:clamp(34px,6vw,64px); filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)); animation:sway 3s ease-in-out infinite;}
+  #scene-title{gap:clamp(10px,2vh,20px); text-align:center;}
+  .flag{font-size:clamp(44px,8vw,74px); filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)); animation:sway 3s ease-in-out infinite;}
   @keyframes sway{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}
   .title-main{
-    font-weight:800; font-size:clamp(22px,4.4vw,44px);
+    font-weight:800; font-size:clamp(26px,5vw,48px);
     color:var(--gold); text-shadow:0 3px 0 var(--wood-dark), 0 6px 14px rgba(0,0,0,.5);
     letter-spacing:1px;
   }
-  .title-sub{font-size:clamp(12px,1.8vw,18px); color:var(--parchment-dark); max-width:70%;}
+  .title-sub{font-size:clamp(14px,2.2vw,20px); color:var(--parchment-dark); max-width:80%; margin-bottom:10px;}
   .btn{
     font-family:'Mali',sans-serif; font-weight:700; cursor:pointer; border:none;
-    border-radius:14px; padding:clamp(10px,1.6vh,16px) clamp(20px,3vw,34px);
-    font-size:clamp(14px,2vw,20px);
+    border-radius:14px; padding:clamp(12px,2vh,18px) clamp(24px,4vw,40px);
+    font-size:clamp(16px,2.5vw,22px);
     background:linear-gradient(180deg, var(--gold), var(--gold-deep));
     color:var(--ink); box-shadow:0 6px 0 #8f6a1e, 0 10px 16px rgba(0,0,0,.35);
     transition:transform .08s ease;
@@ -107,71 +109,64 @@
   .door, .choice-btn, .keypad button, .qr-link, .back-link{
     touch-action:manipulation;
   }
-  /* rotate hint for small portrait screens */
-  #rotate-hint{
-    display:none;
-    position:fixed; left:0; right:0; z-index:20;
-    top:calc(env(safe-area-inset-top,0px) + 8px);
-    margin:0 auto; width:max-content; max-width:90vw;
-    background:rgba(7,27,35,.85); color:var(--parchment);
-    border:1px solid rgba(242,193,78,.4);
-    border-radius:999px; padding:6px 14px;
-    font-size:12px; font-weight:700; text-align:center;
-    box-shadow:0 6px 14px rgba(0,0,0,.4);
-    pointer-events:none;
-  }
-  @media (orientation:portrait){
-    #rotate-hint{ display:block; }
-  }
+  
+  /* ปิดการแจ้งเตือนหมุนจอ เพราะตอนนี้เล่นแนวตั้งได้แล้ว */
+  #rotate-hint{ display:none !important; }
+
   .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #8f6a1e, 0 4px 8px rgba(0,0,0,.3);}
   .btn.secondary{background:linear-gradient(180deg,#5fc4b3,var(--teal)); box-shadow:0 6px 0 #24746a, 0 10px 16px rgba(0,0,0,.35);}
   .btn.secondary:active{box-shadow:0 2px 0 #24746a, 0 4px 8px rgba(0,0,0,.3);}
 
   /* ---------- HUD ---------- */
   #hud{
-    position:absolute; top:10px; left:0; right:0;
-    display:flex; align-items:center; justify-content:center; gap:clamp(6px,1.4vw,14px);
+    position:absolute; top:16px; left:0; right:0;
+    display:flex; align-items:center; justify-content:center; gap:clamp(8px,2vw,16px);
     z-index:5; pointer-events:none;
   }
   .gem-slot{
-    width:clamp(30px,5vw,46px); height:clamp(30px,5vw,46px);
+    width:clamp(34px,6vw,50px); height:clamp(34px,6vw,50px);
     background:rgba(7,27,35,.65); border:2px solid var(--gold-deep); border-radius:10px;
     display:flex; align-items:center; justify-content:center;
-    font-weight:800; font-size:clamp(14px,2.4vw,20px); color:var(--gold);
+    font-weight:800; font-size:clamp(16px,3vw,24px); color:var(--gold);
     box-shadow:inset 0 0 8px rgba(0,0,0,.5);
     transition:transform .25s ease, background .25s ease;
   }
   .gem-slot.filled{background:linear-gradient(180deg,#3fa796,#2c7d70); color:#fff; transform:scale(1.08); border-color:#fff3c4;}
 
   /* ---------- HALLWAY SCENE ---------- */
-  #scene-hallway{justify-content:flex-end; padding-bottom:clamp(14px,3vh,30px);}
+  #scene-hallway{justify-content:center; padding-bottom:clamp(30px,6vh,60px);}
   .hall-caption{
-    position:absolute; top:clamp(46px,8vh,62px); left:0;right:0; text-align:center;
-    font-size:clamp(11px,1.6vw,16px); color:var(--parchment-dark);
+    position:absolute; top:clamp(65px,10vh,80px); left:0;right:0; text-align:center;
+    font-size:clamp(13px,2vw,18px); color:var(--parchment-dark);
+    padding: 0 10px;
   }
   .hallway-floor{
-    position:absolute; left:0;right:0;bottom:0; height:22%;
+    position:absolute; left:0;right:0;bottom:0; height:18%;
+    min-height: 80px;
     background:repeating-linear-gradient(90deg, var(--wood-dark) 0 26px, var(--wood) 26px 52px);
     box-shadow:0 -6px 12px rgba(0,0,0,.4) inset;
+    z-index: 1;
   }
   .doors-row{
-    display:flex; align-items:flex-end; justify-content:center; gap:clamp(10px,2.2vw,26px);
+    display:flex; align-items:flex-end; justify-content:center; gap:clamp(12px,3vw,30px);
     width:100%; position:relative; z-index:2;
+    flex-wrap:wrap; /* ให้ประตูปัดตกบรรทัดได้บนจอมือถือ */
+    margin-top: 40px;
   }
   .door{
     position:relative; cursor:pointer; text-align:center;
-    display:flex; flex-direction:column; align-items:center; gap:6px;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
     transition:transform .15s ease;
   }
   .door:hover{transform:translateY(-4px);}
   .door-shape{
-    width:clamp(58px,9vw,104px); height:clamp(92px,15vh,168px);
+    width:clamp(65px,12vw,110px); height:clamp(100px,18vh,175px);
     background:linear-gradient(180deg, var(--wood-light), var(--wood-dark));
     border:3px solid var(--wood-dark);
     border-radius:50% 50% 6px 6px / 30% 30% 6px 6px;
     box-shadow:0 8px 14px rgba(0,0,0,.4), inset 0 0 0 4px rgba(242,193,78,.18);
     display:flex; align-items:center; justify-content:center;
-    font-size:clamp(20px,3.6vw,38px);
+    font-size:clamp(24px,4.5vw,42px);
     position:relative;
   }
   .door-shape::before{
@@ -179,29 +174,29 @@
     background:var(--gold); right:14%; top:50%; box-shadow:0 0 6px var(--gold);
   }
   .door.mid .door-shape{
-    width:clamp(84px,12vw,140px); height:clamp(110px,18vh,196px);
+    width:clamp(90px,16vw,150px); height:clamp(120px,22vh,205px);
     background:linear-gradient(180deg,#8a5a33, var(--wood-dark));
     border-color:var(--gold-deep);
   }
   .door.solved .door-shape{background:linear-gradient(180deg,#4c8f7f,#2c6a5d); border-color:#bfe9dd;}
   .door.locked-mid .door-shape{filter:grayscale(.4) brightness(.7); cursor:not-allowed;}
-  .door-label{font-size:clamp(10px,1.4vw,14px); font-weight:700; color:var(--parchment-dark);}
+  .door-label{font-size:clamp(12px,1.8vw,16px); font-weight:700; color:var(--parchment-dark);}
 
   /* ---------- ROOM SCENE ---------- */
-  #scene-room{justify-content:flex-start; padding-top:clamp(34px,6vh,50px);}
+  #scene-room{justify-content:center;}
   .room-porthole{
-    width:clamp(90px,15vw,150px); height:clamp(90px,15vw,150px); border-radius:50%;
+    width:clamp(100px,18vw,160px); height:clamp(100px,18vw,160px); border-radius:50%;
     background:radial-gradient(circle at 35% 30%, #2a7f8f, #0c3844 75%);
     border:10px solid #6b7280; box-shadow:0 0 0 4px #3f4652, 0 10px 20px rgba(0,0,0,.5), inset 0 0 20px rgba(0,0,0,.5);
     display:flex;align-items:center;justify-content:center;
-    font-size:clamp(30px,5.5vw,54px);
-    margin-bottom:clamp(8px,1.6vh,14px);
+    font-size:clamp(36px,7vw,60px);
+    margin-bottom:clamp(12px,2vh,20px);
     animation:bob 4s ease-in-out infinite;
   }
   @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
-  .room-name{font-weight:800; font-size:clamp(14px,2.4vw,22px); color:var(--gold); margin-bottom:4px;}
-  .progress-dots{display:flex;gap:8px;margin-bottom:clamp(8px,1.6vh,14px);}
-  .progress-dots span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.4);}
+  .room-name{font-weight:800; font-size:clamp(18px,3.5vw,26px); color:var(--gold); margin-bottom:6px; text-align:center;}
+  .progress-dots{display:flex;gap:10px;margin-bottom:clamp(12px,2vh,20px);}
+  .progress-dots span{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.4);}
   .progress-dots span.done{background:var(--gold); border-color:var(--gold);}
   .progress-dots span.now{background:var(--teal); border-color:var(--teal);}
 
@@ -209,23 +204,25 @@
     background:linear-gradient(180deg,#234431,#1a3626);
     border:10px solid var(--wood-dark);
     border-radius:12px;
-    padding:clamp(12px,2.4vh,22px) clamp(18px,3vw,34px);
+    padding:clamp(16px,3vh,30px) clamp(20px,4vw,40px);
     box-shadow:0 10px 24px rgba(0,0,0,.5);
     text-align:center;
-    max-width:92%;
+    width:min(92%, 600px);
   }
   .equation{
-    font-weight:800; font-size:clamp(26px,5vw,46px); color:#fdfaf0;
+    font-weight:800; font-size:clamp(32px,6vw,54px); color:#fdfaf0;
     letter-spacing:2px; text-shadow:0 2px 0 rgba(0,0,0,.4);
   }
+  
+  /* ปรับกริดให้รองรับมือถือแบบ 2 คอลัมน์ */
   .choices{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(8px,1.4vw,14px);
-    margin-top:clamp(14px,2.6vh,22px); width:min(92%,560px);
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:clamp(10px,2vw,18px);
+    margin-top:clamp(18px,3.5vh,30px); width:min(92%,600px);
   }
   .choice-btn{
     font-family:'Mali',sans-serif; font-weight:800; cursor:pointer;
-    font-size:clamp(16px,2.6vw,24px);
-    padding:clamp(10px,1.8vh,16px) 4px;
+    font-size:clamp(18px,3.5vw,28px);
+    padding:clamp(12px,2vh,18px) 6px;
     border-radius:12px; border:none;
     background:linear-gradient(180deg,var(--parchment),var(--parchment-dark));
     color:var(--ink);
@@ -239,36 +236,36 @@
   @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
 
   .feedback-msg{
-    margin-top:clamp(10px,2vh,16px); font-weight:700; font-size:clamp(13px,2vw,18px);
-    min-height:1.4em; color:var(--gold);
+    margin-top:clamp(14px,2.5vh,20px); font-weight:700; font-size:clamp(15px,2.5vw,22px);
+    min-height:1.4em; color:var(--gold); text-align:center;
   }
   .back-link{
-    position:absolute; top:12px; left:14px; font-size:clamp(11px,1.5vw,14px);
-    color:var(--parchment-dark); cursor:pointer; text-decoration:underline;
+    position:absolute; top:16px; left:16px; font-size:clamp(13px,2vw,16px);
+    color:var(--parchment-dark); cursor:pointer; text-decoration:underline; z-index:6;
   }
 
   /* ---------- TREASURE SCENE ---------- */
-  #scene-treasure{gap:clamp(6px,1.4vh,12px);}
-  .chest-emoji{font-size:clamp(60px,10vw,110px); filter:drop-shadow(0 10px 14px rgba(0,0,0,.5)); transition:transform .3s ease;}
+  #scene-treasure{gap:clamp(10px,2vh,16px);}
+  .chest-emoji{font-size:clamp(70px,12vw,130px); filter:drop-shadow(0 10px 14px rgba(0,0,0,.5)); transition:transform .3s ease;}
   .chest-emoji.open{animation:chestpop .5s ease;}
   @keyframes chestpop{0%{transform:scale(1);}50%{transform:scale(1.25) rotate(-4deg);}100%{transform:scale(1);}}
   .code-hint{
-    display:flex; gap:8px; background:rgba(0,0,0,.25); padding:8px 14px; border-radius:10px;
-    font-weight:700; font-size:clamp(11px,1.6vw,15px); color:var(--parchment-dark);
+    display:flex; gap:10px; background:rgba(0,0,0,.25); padding:10px 18px; border-radius:10px;
+    font-weight:700; font-size:clamp(13px,2.2vw,18px); color:var(--parchment-dark);
   }
   .code-hint b{color:var(--gold);}
-  .keypad-slots{display:flex; gap:10px; margin:6px 0;}
+  .keypad-slots{display:flex; gap:12px; margin:10px 0;}
   .keypad-slots div{
-    width:clamp(30px,5vw,44px); height:clamp(36px,6vh,52px);
+    width:clamp(36px,6vw,50px); height:clamp(44px,7vh,60px);
     background:rgba(255,255,255,.08); border:2px solid var(--gold-deep); border-radius:8px;
-    display:flex;align-items:center;justify-content:center; font-weight:800; font-size:clamp(16px,2.6vw,24px); color:#fff;
+    display:flex;align-items:center;justify-content:center; font-weight:800; font-size:clamp(20px,3.5vw,28px); color:#fff;
   }
   .keypad{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:min(88%,300px);
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px; width:min(90%,320px);
   }
   .keypad button{
-    font-family:'Mali',sans-serif; font-weight:800; font-size:clamp(15px,2.2vw,20px);
-    padding:clamp(9px,1.6vh,13px) 0; border:none; border-radius:10px; cursor:pointer;
+    font-family:'Mali',sans-serif; font-weight:800; font-size:clamp(18px,3vw,24px);
+    padding:clamp(12px,2vh,16px) 0; border:none; border-radius:10px; cursor:pointer;
     background:linear-gradient(180deg,var(--parchment),var(--parchment-dark)); color:var(--ink);
     box-shadow:0 4px 0 #a88f5e;
   }
@@ -277,14 +274,14 @@
   .keypad button.confirm{background:linear-gradient(180deg,#7be0a0,#3fae6a); color:#123; box-shadow:0 4px 0 #24743e;}
 
   /* ---------- BOSS SCENE ---------- */
-  #scene-boss{gap:clamp(4px,1vh,10px);}
-  .boss-caption{font-size:clamp(11px,1.6vw,16px); color:var(--parchment-dark); margin-bottom:2px;}
+  #scene-boss{gap:clamp(8px,1.5vh,14px);}
+  .boss-caption{font-size:clamp(13px,2vw,18px); color:var(--parchment-dark); margin-bottom:4px; text-align:center;}
   .boss-stage{
     position:relative; display:flex; align-items:center; justify-content:center;
-    width:100%; margin-bottom:clamp(4px,1vh,8px);
+    width:100%; margin-bottom:clamp(8px,1.5vh,12px);
   }
   .boss-octopus{
-    font-size:clamp(50px,8vw,86px);
+    font-size:clamp(60px,10vw,100px);
     filter:drop-shadow(0 8px 12px rgba(0,0,0,.5));
     animation:bossFloat 3s ease-in-out infinite;
     z-index:2;
@@ -294,64 +291,69 @@
   @keyframes bossHurt{0%{filter:brightness(1) drop-shadow(0 8px 12px rgba(0,0,0,.5));}50%{filter:brightness(2.2) drop-shadow(0 8px 12px rgba(180,68,60,.8));}100%{filter:brightness(1) drop-shadow(0 8px 12px rgba(0,0,0,.5));}}
   .boss-octopus.defeated{animation:bossDefeat .8s ease forwards;}
   @keyframes bossDefeat{0%{transform:scale(1) rotate(0);opacity:1;}100%{transform:scale(1.4) rotate(20deg);opacity:0;}}
-  .tentacle-row{display:flex; gap:clamp(10px,2.4vw,22px); margin-top:clamp(2px,0.6vh,6px);}
+  .tentacle-row{display:flex; flex-wrap:wrap; justify-content:center; gap:clamp(14px,3vw,30px); margin-top:clamp(4px,1vh,10px);}
   .tentacle{
-    display:flex; flex-direction:column; align-items:center; gap:4px;
-    font-size:clamp(22px,4vw,36px);
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    font-size:clamp(28px,5vw,42px);
     transition:transform .25s ease, opacity .25s ease;
   }
   .tentacle .t-icon{transition:transform .25s ease, opacity .25s ease, filter .25s ease;}
   .tentacle.cut .t-icon{opacity:.3; filter:grayscale(1); transform:scale(.8) rotate(-14deg);}
-  .tentacle .t-label{font-size:clamp(9px,1.3vw,12px); color:var(--parchment-dark); font-weight:700;}
+  .tentacle .t-label{font-size:clamp(11px,1.6vw,14px); color:var(--parchment-dark); font-weight:700;}
   .tentacle.cut .t-label{color:var(--teal);}
-  .boss-hp{display:flex; gap:6px; margin-top:2px;}
-  .boss-hp span{width:clamp(20px,3.4vw,30px); height:8px; border-radius:4px; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.3);}
+  .boss-hp{display:flex; gap:8px; margin-top:4px;}
+  .boss-hp span{width:clamp(24px,4vw,36px); height:10px; border-radius:5px; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.3);}
   .boss-hp span.gone{background:var(--red); border-color:#7c2b26;}
 
   /* ---------- QR SHARE ---------- */
   .qr-link{
-    position:absolute; top:12px; right:14px; font-size:clamp(11px,1.5vw,14px);
+    position:absolute; top:16px; right:16px; font-size:clamp(13px,2vw,16px);
     color:var(--parchment-dark); cursor:pointer; z-index:6;
-    display:flex; align-items:center; gap:4px;
+    display:flex; align-items:center; gap:6px;
   }
-  #scene-qr{gap:clamp(6px,1.4vh,12px); text-align:center;}
+  #scene-qr{gap:clamp(10px,2vh,18px); text-align:center;}
   .qr-box{
-    background:#fff; padding:clamp(10px,1.8vw,16px); border-radius:14px;
+    background:#fff; padding:clamp(14px,2.5vw,22px); border-radius:14px;
     box-shadow:0 10px 24px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center;
   }
   .qr-url{
-    font-size:clamp(10px,1.4vw,13px); color:var(--parchment-dark); word-break:break-all;
-    max-width:80%; background:rgba(0,0,0,.25); padding:6px 12px; border-radius:8px;
+    font-size:clamp(12px,1.8vw,15px); color:var(--parchment-dark); word-break:break-all;
+    max-width:90%; background:rgba(0,0,0,.25); padding:8px 16px; border-radius:8px;
   }
 
   /* ---------- WIN SCENE ---------- */
-  #scene-win{gap:10px; text-align:center;}
-  .win-title{font-weight:800; color:var(--gold); font-size:clamp(22px,4vw,40px); text-shadow:0 3px 0 var(--wood-dark);}
-  .win-sub{color:var(--parchment-dark); font-size:clamp(12px,1.8vw,18px);}
+  #scene-win{gap:14px; text-align:center;}
+  .win-title{font-weight:800; color:var(--gold); font-size:clamp(26px,5vw,48px); text-shadow:0 3px 0 var(--wood-dark);}
+  .win-sub{color:var(--parchment-dark); font-size:clamp(14px,2.2vw,22px);}
   .confetti-layer{position:absolute; inset:0; pointer-events:none; overflow:hidden;}
-  .confetti{position:absolute; top:-10%; font-size:20px; animation:fall linear forwards;}
-  @keyframes fall{to{ transform:translateY(120vh) rotate(360deg); opacity:.2; }}
+  .confetti{position:absolute; top:-10%; font-size:24px; animation:fall linear forwards;}
+  @keyframes fall{to{ transform:translateY(150vh) rotate(360deg); opacity:.2; }}
 
   .parrot{
-    position:absolute; bottom:6px; right:10px; font-size:clamp(28px,4.4vw,44px);
+    position:absolute; bottom:10px; right:14px; font-size:clamp(34px,5vw,52px);
     animation:flap 2.4s ease-in-out infinite; z-index:6;
   }
   @keyframes flap{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-6px) rotate(3deg);}}
   .speech{
-    position:absolute; bottom:clamp(46px,8vh,64px); right:clamp(6px,2vw,14px);
+    position:absolute; bottom:clamp(55px,10vh,80px); right:clamp(10px,2.5vw,20px);
     background:var(--parchment); color:var(--ink); font-weight:700;
-    font-size:clamp(10px,1.4vw,13px); padding:6px 10px; border-radius:10px;
-    max-width:150px; box-shadow:0 4px 8px rgba(0,0,0,.3); display:none;
+    font-size:clamp(12px,1.8vw,15px); padding:8px 12px; border-radius:10px;
+    max-width:180px; box-shadow:0 4px 8px rgba(0,0,0,.3); display:none; z-index:6;
   }
   .speech.show{display:block;}
   .speech::after{
-    content:""; position:absolute; bottom:-8px; right:16px; border-width:8px 6px 0 6px;
+    content:""; position:absolute; bottom:-10px; right:20px; border-width:10px 8px 0 8px;
     border-style:solid; border-color:var(--parchment) transparent transparent transparent;
+  }
+  
+  @media (max-width: 600px) {
+    .choices { grid-template-columns: repeat(2, 1fr); }
+    .door { width: 40%; }
+    .doors-row { gap: 10px; }
   }
 </style>
 </head>
 <body>
-<div id="rotate-hint">🔄 หมุนจอเป็นแนวนอนเพื่อเล่นได้เต็มตา</div>
 <div id="stage"><div id="frame">
 
   <div id="hud" hidden>
@@ -435,7 +437,7 @@
   <!-- WIN -->
   <div class="scene" id="scene-win">
     <div class="confetti-layer" id="confetti-layer"></div>
-    <div style="font-size:clamp(50px,9vw,90px)">🏆💰</div>
+    <div style="font-size:clamp(60px,11vw,110px)">🏆💰</div>
     <div class="win-title">เก่งมาก! เจ้าหาสมบัติผู้ยิ่งใหญ่!</div>
     <div class="win-sub">เจ้าไขโจทย์เลขครบทั้ง 4 ห้อง และเปิดกล่องสมบัติสำเร็จ!</div>
     <button class="btn secondary" onclick="restartGame()">🔁 เล่นอีกครั้ง</button>
@@ -505,6 +507,7 @@ function showScene(id){
   document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById('hud').hidden = (id==='scene-title' || id==='scene-qr');
+  window.scrollTo({ top: 0, behavior: 'smooth' }); // เลื่อนจอกลับไปบนสุดเวลาเปลี่ยนหน้า
 }
 
 function startGame(){

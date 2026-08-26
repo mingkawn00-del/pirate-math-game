@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>ผจญภัยเรือโจรสลัด: ล่าเลขลับ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --navy:#0B2E3A;
+    --navy-deep:#071B23;
+    --navy-glow:#134656;
+    --wood:#7A4A2B;
+    --wood-dark:#54331D;
+    --wood-light:#9C6B3E;
+    --gold:#F2C14E;
+    --gold-deep:#C8922E;
+    --parchment:#F3E6C4;
+    --parchment-dark:#E4D2A0;
+    --red:#B4443C;
+    --teal:#3FA796;
+    --ink:#2B1B12;
+    --card-radius:26px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%; text-size-adjust:100%;}
+  html,body{
+    margin:0;padding:0;
+    font-family:'Mali',sans-serif;
+    color:var(--parchment);
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  body{
+    min-height:100dvh;
+    background:radial-gradient(ellipse at top, var(--navy-glow), var(--navy-deep) 70%);
+    background-attachment:fixed;
+  }
+
+  /* ---------- fixed ambient background (never affects scroll/layout) ---------- */
+  #bg-decor{
+    position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+  }
+  .bubble{
+    position:absolute;bottom:-40px;border-radius:50%;
+    background:rgba(255,255,255,.08);
+    animation:rise linear infinite;
+  }
+  @keyframes rise{ to{ transform:translateY(-110vh) translateX(var(--drift,0px)); opacity:0; } }
+
+  /* ---------- page shell ---------- */
+  #page{
+    position:relative; z-index:1;
+    min-height:100dvh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:clamp(10px,3vw,26px) clamp(10px,3vw,26px) calc(env(safe-area-inset-bottom,0px) + 26px);
+  }
+  #brandbar{
+    position:sticky; top:0; z-index:3;
+    width:100%; max-width:760px;
+    display:flex; align-items:center; gap:10px; justify-content:center;
+    padding:10px 14px; margin-bottom:clamp(10px,2.4vh,18px);
+    background:rgba(7,27,35,.55); backdrop-filter:blur(6px);
+    border:1px solid rgba(242,193,78,.25); border-radius:16px;
+    box-shadow:0 8px 20px rgba(0,0,0,.35);
+  }
+  #brandbar .flag-mini{font-size:20px;}
+  #brandbar .brand-name{font-weight:800; font-size:clamp(13px,2.2vw,17px); color:var(--gold); letter-spacing:.5px;}
+
+  #app{
+    position:relative;
+    width:100%; max-width:760px;
+    background:linear-gradient(180deg, var(--navy-glow), var(--navy-deep));
+    border-radius:var(--card-radius);
+    box-shadow:0 22px 60px rgba(0,0,0,.55), inset 0 0 0 3px rgba(242,193,78,.22);
+    padding:clamp(16px,3.4vw,34px);
+    display:flex; flex-direction:column; align-items:center;
+  }
+
+  .scene{ display:none; width:100%; flex-direction:column; align-items:center; text-align:center; }
+  .scene.active{ display:flex; }
+
+  /* ---------- shared top rows ---------- */
+  .scene-topbar{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    width:100%; margin-bottom:clamp(12px,2.6vh,20px);
+  }
+  .scene-topbar .spacer{flex:1;}
+  .icon-btn{
+    font-family:'Mali',sans-serif; font-weight:700; cursor:pointer;
+    background:rgba(0,0,0,.28); color:var(--parchment);
+    border:2px solid var(--gold-deep); border-radius:12px;
+    padding:8px 14px; font-size:clamp(12px,1.8vw,15px);
+    display:flex; align-items:center; gap:6px;
+    transition:transform .08s ease, background .15s ease;
+  }
+  .icon-btn:active{transform:translateY(2px);}
+  .icon-btn.square{padding:8px 10px;}
+  .stats-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .stat-pill{
+    background:rgba(0,0,0,.28); border:2px solid var(--gold-deep); border-radius:12px;
+    padding:6px 12px; font-weight:800; font-size:clamp(11px,1.7vw,14px); color:var(--gold);
+    white-space:nowrap;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn{
+    font-family:'Mali',sans-serif; font-weight:700; cursor:pointer; border:none;
+    border-radius:14px; padding:clamp(12px,1.8vh,17px) clamp(22px,3.4vw,36px);
+    font-size:clamp(15px,2.1vw,20px);
+    background:linear-gradient(180deg, var(--gold), var(--gold-deep));
+    color:var(--ink); box-shadow:0 6px 0 #8f6a1e, 0 10px 16px rgba(0,0,0,.35);
+    transition:transform .08s ease;
+    touch-action:manipulation;
+  }
+  .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #8f6a1e, 0 4px 8px rgba(0,0,0,.3);}
+  .btn.secondary{background:linear-gradient(180deg,#5fc4b3,var(--teal)); box-shadow:0 6px 0 #24746a, 0 10px 16px rgba(0,0,0,.35);}
+  .btn.secondary:active{box-shadow:0 2px 0 #24746a, 0 4px 8px rgba(0,0,0,.3);}
+  .btn.small{font-size:clamp(12px,1.6vw,15px); padding:clamp(9px,1.4vh,13px) clamp(16px,2.4vw,24px); box-shadow:0 4px 0 #8f6a1e, 0 8px 12px rgba(0,0,0,.3);}
+  .btn.small:active{transform:translateY(3px); box-shadow:0 1px 0 #8f6a1e;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
+
+  /* ---------- TITLE ---------- */
+  #scene-title{gap:clamp(8px,1.8vh,16px); padding:clamp(6px,1vh,10px) 0;}
+  .flag{font-size:clamp(38px,7vw,68px); filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)); animation:sway 3s ease-in-out infinite;}
+  @keyframes sway{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}
+  .title-main{
+    font-weight:800; font-size:clamp(23px,4.6vw,42px);
+    color:var(--gold); text-shadow:0 3px 0 var(--wood-dark), 0 6px 14px rgba(0,0,0,.5);
+    letter-spacing:1px;
+  }
+  .title-sub{font-size:clamp(12px,1.8vw,17px); color:var(--parchment-dark); max-width:520px;}
+  .name-field{display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:4px; width:100%;}
+  .name-label{font-size:clamp(11px,1.6vw,15px); color:var(--parchment-dark); font-weight:700;}
+  .name-input{
+    font-family:'Mali',sans-serif; font-weight:700; text-align:center;
+    font-size:clamp(15px,2.2vw,19px); color:var(--ink);
+    padding:clamp(9px,1.4vh,13px) 14px; width:min(100%,320px);
+    border-radius:12px; border:3px solid var(--gold-deep);
+    background:var(--parchment);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.25);
+    outline:none;
+  }
+  .name-input:focus{border-color:#fff3c4; box-shadow:inset 0 2px 6px rgba(0,0,0,.25), 0 0 0 3px rgba(242,193,78,.4);}
+
+  /* ---------- QR & LEADERBOARD ---------- */
+  .panel-heading{font-weight:800; font-size:clamp(15px,2.4vw,20px); color:var(--gold); margin-bottom:6px;}
+  .qr-box{
+    background:#fff; padding:clamp(10px,1.8vw,16px); border-radius:14px;
+    box-shadow:0 10px 24px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center;
+    margin:6px 0;
+  }
+  .qr-url{
+    font-size:clamp(10px,1.4vw,13px); color:var(--parchment-dark); word-break:break-all;
+    max-width:100%; background:rgba(0,0,0,.25); padding:6px 12px; border-radius:8px;
+  }
+  .board-list{
+    list-style:none; margin:6px 0 0; padding:0; width:100%;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .board-list li{
+    display:flex; align-items:center; gap:10px;
+    background:rgba(0,0,0,.25); border:1px solid rgba(242,193,78,.3);
+    border-radius:12px; padding:10px 14px;
+    font-weight:700; font-size:clamp(12px,1.8vw,15px);
+  }
+  .board-list li .rank{color:var(--gold); width:1.8em; text-align:center; font-size:1.1em;}
+  .board-list li .bname{flex:1; text-align:left; color:var(--parchment);}
+  .board-list li .bscore{color:var(--teal); white-space:nowrap;}
+  .board-empty{color:var(--parchment-dark); font-size:clamp(12px,1.8vw,15px); padding:10px 0;}
+
+  /* ---------- HALLWAY ---------- */
+  .hall-caption{font-size:clamp(11px,1.6vw,15px); color:var(--parchment-dark); margin-bottom:clamp(10px,2vh,16px);}
+  .gem-row{display:flex; gap:clamp(6px,1.4vw,12px); justify-content:center; margin-bottom:clamp(12px,2.4vh,18px);}
+  .gem-slot{
+    width:clamp(32px,6vw,44px); height:clamp(32px,6vw,44px);
+    background:rgba(0,0,0,.28); border:2px solid var(--gold-deep); border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:clamp(14px,2.4vw,18px); color:var(--gold);
+    box-shadow:inset 0 0 8px rgba(0,0,0,.5);
+    transition:transform .25s ease, background .25s ease;
+  }
+  .gem-slot.filled{background:linear-gradient(180deg,#3fa796,#2c7d70); color:#fff; transform:scale(1.08); border-color:#fff3c4;}
+  .hallway-deck{
+    width:100%; border-radius:18px; padding:clamp(16px,3vh,26px) clamp(8px,2vw,16px) clamp(10px,2vh,16px);
+    background:repeating-linear-gradient(90deg, var(--wood-dark) 0 26px, var(--wood) 26px 52px);
+    box-shadow:inset 0 6px 16px rgba(0,0,0,.4), 0 8px 18px rgba(0,0,0,.35);
+    position:relative;
+  }
+  .doors-row{
+    display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:center;
+    gap:clamp(10px,2vw,20px); position:relative; z-index:2;
+  }
+  .door{
+    position:relative; cursor:pointer; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    transition:transform .15s ease; width:clamp(66px,15vw,108px);
+  }
+  .door:active{transform:translateY(2px);}
+  .door-shape{
+    width:100%; height:clamp(84px,15vh,150px);
+    background:linear-gradient(180deg, var(--wood-light), var(--wood-dark));
+    border:3px solid var(--wood-dark);
+    border-radius:50% 50% 6px 6px / 30% 30% 6px 6px;
+    box-shadow:0 8px 14px rgba(0,0,0,.4), inset 0 0 0 4px rgba(242,193,78,.18);
+    display:flex; align-items:center; justify-content:center;
+    font-size:clamp(20px,3.6vw,36px);
+    position:relative;
+  }
+  .door-shape::before{
+    content:"";position:absolute; width:8px;height:8px;border-radius:50%;
+    background:var(--gold); right:14%; top:50%; box-shadow:0 0 6px var(--gold);
+  }
+  .door.mid{width:clamp(78px,17vw,124px);}
+  .door.mid .door-shape{
+    background:linear-gradient(180deg,#8a5a33, var(--wood-dark));
+    border-color:var(--gold-deep);
+  }
+  .door.solved .door-shape{background:linear-gradient(180deg,#4c8f7f,#2c6a5d); border-color:#bfe9dd;}
+  .door.locked-mid .door-shape{filter:grayscale(.4) brightness(.7); cursor:not-allowed;}
+  .door-label{font-size:clamp(10px,1.4vw,13px); font-weight:700; color:var(--parchment-dark);}
+  .parrot-note{
+    margin-top:clamp(12px,2.2vh,18px); display:flex; align-items:center; gap:10px;
+    background:rgba(0,0,0,.22); border:1px solid rgba(242,193,78,.3); border-radius:14px;
+    padding:8px 14px; max-width:100%; min-height:1.6em;
+  }
+  .parrot-note .emoji{font-size:clamp(20px,3vw,26px); animation:flap 2.4s ease-in-out infinite;}
+  @keyframes flap{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-5px) rotate(3deg);}}
+  .parrot-note .txt{font-size:clamp(11px,1.6vw,14px); color:var(--parchment); text-align:left; font-weight:600;}
+
+  /* ---------- ROOM / QUESTIONS ---------- */
+  .room-porthole{
+    width:clamp(78px,14vw,120px); height:clamp(78px,14vw,120px); border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #2a7f8f, #0c3844 75%);
+    border:8px solid #6b7280; box-shadow:0 0 0 4px #3f4652, 0 10px 20px rgba(0,0,0,.5), inset 0 0 20px rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;
+    font-size:clamp(28px,5vw,46px);
+    margin-bottom:clamp(8px,1.6vh,14px);
+    animation:bob 4s ease-in-out infinite;
+  }
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+  .room-name{font-weight:800; font-size:clamp(14px,2.4vw,20px); color:var(--gold); margin-bottom:4px;}
+  .progress-dots{display:flex;gap:8px;margin-bottom:clamp(10px,1.8vh,16px);}
+  .progress-dots span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.25); border:2px solid rgba(255,255,255,.4);}
+  .progress-dots span.done{background:var(--gold); border-color:var(--gold);}
+  .progress-dots span.now{background:var(--teal); border-color:var(--teal);}
+
+  .chalkboard{
+    background:linear-gradient(180deg,#234431,#1a3626);
+    border:10px solid var(--wood-dark);
+    border-radius:12px;
+    padding:clamp(14px,2.6vh,24px) clamp(18px,3vw,34px);
+    box-shadow:0 10px 24px rgba(0,0,0,.5);
+    text-align:center;
+    width:min(100%,420px);
+  }
+  .equation{
+    font-weight:800; font-size:clamp(26px,5vw,42px); color:#fdfaf0;
+    letter-spacing:2px; text-shadow:0 2px 0 rgba(0,0,0,.4);
+  }
+  .choices{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(8px,1.4vw,14px);
+    margin-top:clamp(14px,2.6vh,22px); width:min(100%,520px);
+  }
+  .choice-btn{
+    font-family:'Mali',sans-serif; font-weight:800; cursor:pointer;
+    font-size:clamp(16px,2.6vw,23px);
+    padding:clamp(11px,1.8vh,17px) 4px;
+    border-radius:12px; border:none;
+    background:linear-gradient(180deg,var(--parchment),var(--parchment-dark));
+    color:var(--ink);
+    box-shadow:0 5px 0 #a88f5e, 0 8px 12px rgba(0,0,0,.3);
+    transition:transform .08s ease;
+  }
+  .choice-btn:active{transform:translateY(3px); box-shadow:0 2px 0 #a88f5e;}
+  .choice-btn.correct{background:linear-gradient(180deg,#7be0a0,#3fae6a); animation:pop .35s ease;}
+  .choice-btn.wrong{background:linear-gradient(180deg,#f19a94,var(--red)); animation:shake .35s ease;}
+  @keyframes pop{0%{transform:scale(1);}50%{transform:scale(1.12);}100%{transform:scale(1);}}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+  .feedback-msg{
+    margin-top:clamp(10px,2vh,16px); font-weight:700; font-size:clamp(13px,2vw,17px);
+    min-height:1.4em; color:var(--gold);
+  }
+
+  /* ---------- BOSS ---------- */
+  .boss-caption{font-size:clamp(11px,1.6vw,15px); color:var(--parchment-dark); margin-bottom:clamp(8px,1.4vh,12px);}
+  .boss-stage{position:relative; display:flex; align-items:center; justify-content:center; width:100%;}
+  .boss-octopus{
+    font-size:clamp(52px,9vw,84px);
+    filter:drop-shadow(0 8px 12px rgba(0,0,0,.5));
+    animation:bossFloat 3s ease-in-out infinite;
+  }
+  @keyframes bossFloat{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-8px) rotate(2deg);}}
+  .boss-octopus.hurt{animation:bossHurt .4s ease;}
+  @keyframes bossHurt{0%{filter:brightness(1);}50%{filter:brightness(2.2) drop-shadow(0 8px 12px rgba(180,68,60,.8));}100%{filter:brightness(1);}}
+  .boss-octopus.defeated{animation:bossDefeat .8s ease forwards;}
+  @keyframes bossDefeat{0%{transform:scale(1) rotate(0);opacity:1;}100%{transform:scale(1.4) rotate(20deg);opacity:0;}}
+  .tentacle-row{display:flex; gap:clamp(12px,3vw,26px); margin:clamp(6px,1.2vh,10px) 0;}
+  .tentacle{display:flex; flex-direction:column; align-items:center; gap:4px; font-size:clamp(22px,4vw,34px); transition:transform .25s ease, opacity .25s ease;}
+  .tentacle .t-icon{transition:transform .25s ease, opacity .25s ease, filter .25s ease;}
+  .tentacle.cut .t-icon{opacity:.3; filter:grayscale(1); transform:scale(.8) rotate(-14deg);}
+  .tentacle .t-label{font-size:clamp(9px,1.3vw,12px); color:var(--parchment-dark); font-weight:700;}
+  .tentacle.cut .t-label{color:var(--teal);}
+  .boss-hp{display:flex; gap:6px; margin-bottom:clamp(10px,1.8vh,16px);}
+  .boss-hp span{width:clamp(22px,3.4vw,30px); height:8px; border-radius:4px; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.3);}
+  .boss-hp span.gone{background:var(--red); border-color:#7c2b26;}
+
+  /* ---------- TREASURE ---------- */
+  .chest-emoji{font-size:clamp(64px,11vw,104px); filter:drop-shadow(0 10px 14px rgba(0,0,0,.5)); transition:transform .3s ease; margin-bottom:6px;}
+  .chest-emoji.open{animation:chestpop .5s ease;}
+  @keyframes chestpop{0%{transform:scale(1);}50%{transform:scale(1.25) rotate(-4deg);}100%{transform:scale(1);}}
+  .code-hint{
+    display:flex; gap:8px; background:rgba(0,0,0,.25); padding:8px 14px; border-radius:10px;
+    font-weight:700; font-size:clamp(11px,1.6vw,14px); color:var(--parchment-dark); margin-bottom:clamp(10px,1.8vh,14px);
+  }
+  .code-hint b{color:var(--gold);}
+  .keypad-slots{display:flex; gap:10px; margin-bottom:clamp(12px,2vh,16px);}
+  .keypad-slots div{
+    width:clamp(32px,5.4vw,42px); height:clamp(38px,6.4vh,50px);
+    background:rgba(255,255,255,.08); border:2px solid var(--gold-deep); border-radius:8px;
+    display:flex;align-items:center;justify-content:center; font-weight:800; font-size:clamp(16px,2.6vw,22px); color:#fff;
+  }
+  .keypad{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:min(100%,280px);}
+  .keypad button{
+    font-family:'Mali',sans-serif; font-weight:800; font-size:clamp(15px,2.2vw,19px);
+    padding:clamp(10px,1.6vh,14px) 0; border:none; border-radius:10px; cursor:pointer;
+    background:linear-gradient(180deg,var(--parchment),var(--parchment-dark)); color:var(--ink);
+    box-shadow:0 4px 0 #a88f5e;
+  }
+  .keypad button:active{transform:translateY(3px); box-shadow:0 1px 0 #a88f5e;}
+  .keypad button.wide{background:linear-gradient(180deg,#f19a94,var(--red)); color:#fff; box-shadow:0 4px 0 #7c2b26;}
+  .keypad button.confirm{background:linear-gradient(180deg,#7be0a0,#3fae6a); color:#123; box-shadow:0 4px 0 #24743e;}
+
+  /* ---------- WIN ---------- */
+  .win-title{font-weight:800; color:var(--gold); font-size:clamp(21px,4vw,36px); text-shadow:0 3px 0 var(--wood-dark); margin-top:4px;}
+  .win-sub{color:var(--parchment-dark); font-size:clamp(12px,1.8vw,16px); margin:6px 0 10px;}
+  .win-stars{font-size:clamp(30px,5.5vw,46px); letter-spacing:6px; margin-bottom:8px;}
+  .win-stats{
+    display:flex; gap:clamp(10px,2vw,20px); flex-wrap:wrap; justify-content:center;
+    background:rgba(0,0,0,.25); padding:10px 18px; border-radius:12px;
+    font-weight:700; font-size:clamp(12px,1.8vw,15px); margin-bottom:clamp(14px,2.4vh,20px);
+  }
+  .win-stats b{color:var(--gold);}
+  .confetti-layer{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:2;}
+  .confetti{position:absolute; top:-10%; font-size:20px; animation:fall linear forwards;}
+  @keyframes fall{to{ transform:translateY(120vh) rotate(360deg); opacity:.2; }}
+</style>
+</head>
+<body>
+
+<div id="bg-decor"></div>
+
+<div id="page">
+  <div id="brandbar">
+    <span class="flag-mini">🏴‍☠️</span>
+    <span class="brand-name">ผจญภัยเรือโจรสลัด: ล่าเลขลับ</span>
+  </div>
+
+  <div id="app">
+
+    <!-- TITLE -->
+    <div class="scene active" id="scene-title">
+      <div class="flag">🏴‍☠️</div>
+      <div class="title-main">ผจญภัยเรือโจรสลัด</div>
+      <div class="title-sub">ไขโจทย์บวก-ลบ ตามหาเลขลับ 4 ตัว สู้กับปลาหมึกยักษ์ด้วยการคูณ แล้วเปิดกล่องสมบัติกลางเรือ!</div>
+      <div class="name-field">
+        <div class="name-label">🖊️ ตั้งชื่อกัปตันน้อยของเจ้า</div>
+        <input type="text" id="player-name" class="name-input" placeholder="เช่น กัปตันพลอย" maxlength="14">
+      </div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn" onclick="startGame()">⚓ เริ่มผจญภัย</button>
+        <button class="btn secondary small" onclick="enterLeaderboard()">🏆 อันดับเกียรติยศ</button>
+        <button class="btn small" onclick="enterQR()">📱 QR เข้าเล่น</button>
+      </div>
+    </div>
+
+    <!-- QR SHARE -->
+    <div class="scene" id="scene-qr">
+      <div class="scene-topbar">
+        <button class="icon-btn" onclick="showScene('scene-title')">← กลับ</button>
+      </div>
+      <div class="panel-heading">📱 สแกน QR เพื่อเข้าเล่นเกมนี้</div>
+      <div class="qr-box" id="qr-box"></div>
+      <div class="qr-url" id="qr-url"></div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="scene" id="scene-leaderboard">
+      <div class="scene-topbar">
+        <button class="icon-btn" onclick="showScene('scene-title')">← กลับ</button>
+      </div>
+      <div style="font-size:clamp(28px,5vw,44px)">🏆</div>
+      <div class="panel-heading">อันดับเกียรติยศนักล่าสมบัติ</div>
+      <ul class="board-list" id="board-list"></ul>
+    </div>
+
+    <!-- HALLWAY -->
+    <div class="scene" id="scene-hallway">
+      <div class="scene-topbar">
+        <div class="spacer"></div>
+        <div class="stats-row">
+          <span class="stat-pill score-badge">⭐ 0 คะแนน</span>
+          <span class="stat-pill time-badge">⏱️ 00:00</span>
+          <button class="icon-btn square mute-btn" onclick="toggleMute()">🔊</button>
+        </div>
+      </div>
+      <div class="gem-row">
+        <div class="gem-slot" id="gem-0">?</div>
+        <div class="gem-slot" id="gem-1">?</div>
+        <div class="gem-slot" id="gem-2">?</div>
+        <div class="gem-slot" id="gem-3">?</div>
+      </div>
+      <div class="hall-caption">เลือกประตูซ้าย-ขวา เพื่อไขโจทย์เลขและตามหาตัวเลขลับ 🗝️</div>
+      <div class="hallway-deck">
+        <div class="doors-row" id="doors-row"></div>
+      </div>
+      <div class="parrot-note">
+        <div class="emoji">🦜</div>
+        <div class="txt" id="hall-speech">กดประตูซ้ายหรือขวาก่อนนะ แล้วค่อยไปเปิดกล่องสมบัติตรงกลาง!</div>
+      </div>
+    </div>
+
+    <!-- ROOM -->
+    <div class="scene" id="scene-room">
+      <div class="scene-topbar">
+        <button class="icon-btn" onclick="goHallway()">← กลับห้องโถง</button>
+        <div class="spacer"></div>
+        <div class="stats-row">
+          <span class="stat-pill score-badge">⭐ 0 คะแนน</span>
+          <span class="stat-pill time-badge">⏱️ 00:00</span>
+        </div>
+      </div>
+      <div class="room-porthole" id="room-porthole">🐙</div>
+      <div class="room-name" id="room-name">ห้องเก็บของ</div>
+      <div class="progress-dots" id="progress-dots"><span></span><span></span><span></span></div>
+      <div class="chalkboard">
+        <div class="equation" id="equation">? + ? = ?</div>
+      </div>
+      <div class="choices" id="choices"></div>
+      <div class="feedback-msg" id="feedback"></div>
+    </div>
+
+    <!-- BOSS FIGHT -->
+    <div class="scene" id="scene-boss">
+      <div class="scene-topbar">
+        <div class="spacer"></div>
+        <div class="stats-row">
+          <span class="stat-pill score-badge">⭐ 0 คะแนน</span>
+          <span class="stat-pill time-badge">⏱️ 00:00</span>
+        </div>
+      </div>
+      <div class="boss-caption">ตอบเลขคูณให้ถูก เพื่อตัดหนวดปลาหมึกยักษ์ทั้ง 3 เส้น!</div>
+      <div class="boss-stage">
+        <div class="boss-octopus" id="boss-octopus">🐙</div>
+      </div>
+      <div class="tentacle-row" id="tentacle-row">
+        <div class="tentacle" id="tentacle-0"><div class="t-icon">🦵</div><div class="t-label">หนวด 1</div></div>
+        <div class="tentacle" id="tentacle-1"><div class="t-icon">🦵</div><div class="t-label">หนวด 2</div></div>
+        <div class="tentacle" id="tentacle-2"><div class="t-icon">🦵</div><div class="t-label">หนวด 3</div></div>
+      </div>
+      <div class="boss-hp" id="boss-hp"><span></span><span></span><span></span></div>
+      <div class="chalkboard">
+        <div class="equation" id="boss-equation">? × ? = ?</div>
+      </div>
+      <div class="choices" id="boss-choices"></div>
+      <div class="feedback-msg" id="boss-feedback"></div>
+    </div>
+
+    <!-- TREASURE -->
+    <div class="scene" id="scene-treasure">
+      <div class="scene-topbar">
+        <button class="icon-btn" onclick="goHallway()">← กลับห้องโถง</button>
+        <div class="spacer"></div>
+        <div class="stats-row">
+          <span class="stat-pill score-badge">⭐ 0 คะแนน</span>
+          <span class="stat-pill time-badge">⏱️ 00:00</span>
+        </div>
+      </div>
+      <div class="chest-emoji" id="chest-emoji">🔒📦</div>
+      <div class="room-name">ใส่รหัสลับ 4 ตัว เพื่อเปิดกล่องสมบัติ</div>
+      <div class="code-hint" id="code-hint"></div>
+      <div class="keypad-slots" id="keypad-slots">
+        <div>_</div><div>_</div><div>_</div><div>_</div>
+      </div>
+      <div class="keypad" id="keypad"></div>
+      <div class="feedback-msg" id="treasure-feedback"></div>
+    </div>
+
+    <!-- WIN -->
+    <div class="scene" id="scene-win">
+      <div style="font-size:clamp(48px,9vw,84px)">🏆💰</div>
+      <div class="win-title" id="win-title">เก่งมาก! เจ้าหาสมบัติผู้ยิ่งใหญ่!</div>
+      <div class="win-sub" id="win-sub">เจ้าไขโจทย์เลขครบทั้ง 4 ห้อง และเปิดกล่องสมบัติสำเร็จ!</div>
+      <div class="win-stars" id="win-stars">⭐⭐⭐</div>
+      <div class="win-stats">
+        <div>คะแนนรวม: <b id="win-score">0</b></div>
+        <div>เวลาที่ใช้: <b id="win-time">00:00</b></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn secondary" onclick="restartGame()">🔁 เล่นอีกครั้ง</button>
+        <button class="btn small" onclick="enterLeaderboard()">🏆 ดูอันดับ</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="confetti-layer" id="confetti-layer"></div>
+
+<script>
+/* ---------------- ambient bubbles (fixed backdrop, independent of scroll) ---------------- */
+const bgDecor = document.getElementById('bg-decor');
+for(let i=0;i<16;i++){
+  const b=document.createElement('div');
+  b.className='bubble';
+  const size=6+Math.random()*16;
+  b.style.width=size+'px'; b.style.height=size+'px';
+  b.style.left=(Math.random()*100)+'%';
+  b.style.setProperty('--drift',(Math.random()*40-20)+'px');
+  b.style.animationDuration=(6+Math.random()*8)+'s';
+  b.style.animationDelay=(Math.random()*8)+'s';
+  bgDecor.appendChild(b);
+}
+
+/* ---------------- game data ---------------- */
+const rooms = [
+  { id:0, side:'left', label:'ห้องซ้าย 1', name:'ถ้ำเก็บของใต้ท้องเรือ', icon:'🐙',
+    questions:[
+      {a:12,b:5,op:'+',ans:17,choices:[17,16,18,15]},
+      {a:20,b:8,op:'-',ans:12,choices:[12,13,11,10]},
+      {a:6,b:3,op:'+',ans:9,choices:[9,8,10,7]},
+    ]},
+  { id:1, side:'left', label:'ห้องซ้าย 2', name:'รังกาบนเสากระโดง', icon:'⚓',
+    questions:[
+      {a:9,b:9,op:'+',ans:18,choices:[18,17,19,16]},
+      {a:15,b:7,op:'-',ans:8,choices:[8,9,7,6]},
+      {a:14,b:9,op:'-',ans:5,choices:[5,6,4,3]},
+    ]},
+  { id:2, side:'right', label:'ห้องขวา 1', name:'ห้องครัวเรือ', icon:'🍳',
+    questions:[
+      {a:8,b:8,op:'+',ans:16,choices:[16,15,17,14]},
+      {a:30,b:12,op:'-',ans:18,choices:[18,17,19,16]},
+      {a:2,b:4,op:'+',ans:6,choices:[6,5,7,8]},
+    ]},
+  { id:3, side:'right', label:'ห้องขวา 2', name:'ดาดฟ้าปืนใหญ่', icon:'💣',
+    questions:[
+      {a:25,b:10,op:'-',ans:15,choices:[15,14,16,13]},
+      {a:7,b:7,op:'+',ans:14,choices:[14,13,15,12]},
+      {a:10,b:3,op:'-',ans:7,choices:[7,6,8,9]},
+    ]},
+];
+
+let solved = [null,null,null,null]; // digit or null
+let currentRoom = null;
+let qIndex = 0;
+let questionHadMiss = false;
+
+/* ---------------- boss data ---------------- */
+const bossQuestions = [
+  {a:4,b:3,ans:12,choices:[12,11,13,9]},
+  {a:6,b:2,ans:12,choices:[12,10,14,11]},
+  {a:5,b:5,ans:25,choices:[25,20,30,15]},
+];
+let bossIndex = 0;
+let bossDefeated = false;
+let bossHadMiss = false;
+
+/* ---------------- player / score / timer ---------------- */
+let playerName = '';
+let score = 0;
+let mistakesTotal = 0;
+let startTime = 0;
+let elapsedSeconds = 0;
+let timerHandle = null;
+let muted = false;
+const pirateNames = ['กัปตันปูเป้','กัปตันฉลามน้อย','กัปตันไข่มุก','กัปตันเกล็ดทอง'];
+
+function addScore(pts){
+  score += pts;
+  document.querySelectorAll('.score-badge').forEach(el=> el.textContent = '⭐ ' + score + ' คะแนน');
+}
+function startTimer(){
+  stopTimer();
+  startTime = Date.now();
+  timerHandle = setInterval(()=>{
+    elapsedSeconds = Math.floor((Date.now()-startTime)/1000);
+    const label = '⏱️ ' + formatTime(elapsedSeconds);
+    document.querySelectorAll('.time-badge').forEach(el=> el.textContent = label);
+  }, 500);
+}
+function stopTimer(){ if(timerHandle){ clearInterval(timerHandle); timerHandle=null; } }
+function formatTime(sec){
+  const m = String(Math.floor(sec/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  return m+':'+s;
+}
+function toggleMute(){
+  muted = !muted;
+  document.querySelectorAll('.mute-btn').forEach(el=> el.textContent = muted ? '🔇' : '🔊');
+}
+
+/* simple WebAudio beeps, no external files needed */
+let audioCtx = null;
+function playTone(freq, dur, type){
+  if(muted) return;
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+  }catch(e){ /* audio unsupported, ignore */ }
+}
+function soundCorrect(){ playTone(660,0.12,'triangle'); setTimeout(()=>playTone(880,0.16,'triangle'),100); }
+function soundWrong(){ playTone(160,0.22,'sawtooth'); }
+function soundWin(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>playTone(f,0.3,'triangle'), i*140)); }
+
+/* ---------------- leaderboard (saved on this device) ---------------- */
+function loadBoard(){
+  try{ return JSON.parse(localStorage.getItem('pirateBoard')||'[]'); }
+  catch(e){ return []; }
+}
+function saveBoardEntry(name, pts, secs){
+  try{
+    const board = loadBoard();
+    board.push({name, pts, secs});
+    board.sort((a,b)=> b.pts - a.pts || a.secs - b.secs);
+    localStorage.setItem('pirateBoard', JSON.stringify(board.slice(0,8)));
+  }catch(e){ /* storage unavailable, skip saving */ }
+}
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+function enterLeaderboard(){
+  showScene('scene-leaderboard');
+  const list = document.getElementById('board-list');
+  const board = loadBoard();
+  list.innerHTML = '';
+  if(board.length===0){
+    list.innerHTML = '<div class="board-empty">ยังไม่มีใครพิชิตสมบัติเลย เจ้าจะเป็นคนแรกไหม? 🏴‍☠️</div>';
+    return;
+  }
+  board.forEach((b,i)=>{
+    const li=document.createElement('li');
+    const medal = ['🥇','🥈','🥉'][i] || (i+1);
+    li.innerHTML = `<span class="rank">${medal}</span><span class="bname">${escapeHtml(b.name)}</span><span class="bscore">${b.pts} คะแนน · ${formatTime(b.secs)}</span>`;
+    list.appendChild(li);
+  });
+}
+
+function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]); }
+
+function showScene(id){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function startGame(){
+  const input = document.getElementById('player-name').value.trim();
+  playerName = input || pirateNames[Math.floor(Math.random()*pirateNames.length)];
+  score = 0;
+  mistakesTotal = 0;
+  addScore(0);
+  startTimer();
+  showScene('scene-hallway');
+  renderHallway();
+  renderHud();
+  parrotSay(`สวัสดีกัปตัน${playerName}! กดประตูซ้ายหรือขวาก่อนนะ แล้วค่อยไปเปิดกล่องสมบัติตรงกลาง!`);
+}
+function restartGame(){
+  solved=[null,null,null,null];
+  bossIndex=0;
+  bossDefeated=false;
+  stopTimer();
+  document.getElementById('player-name').value = playerName;
+  showScene('scene-title');
+}
+
+function renderHud(){
+  for(let i=0;i<4;i++){
+    const el=document.getElementById('gem-'+i);
+    if(solved[i]!==null){ el.textContent=solved[i]; el.classList.add('filled'); }
+    else { el.textContent='?'; el.classList.remove('filled'); }
+  }
+}
+
+function renderHallway(){
+  const row = document.getElementById('doors-row');
+  row.innerHTML='';
+  const leftRooms = rooms.filter(r=>r.side==='left');
+  const rightRooms = rooms.filter(r=>r.side==='right');
+  const makeDoor = (r)=>{
+    const div=document.createElement('div');
+    div.className='door'+(solved[r.id]!==null?' solved':'');
+    div.innerHTML = `<div class="door-shape">${solved[r.id]!==null?'✅':r.icon}</div><div class="door-label">${r.label}</div>`;
+    div.onclick=()=>enterRoom(r.id);
+    return div;
+  };
+  leftRooms.forEach(r=>row.appendChild(makeDoor(r)));
+
+  const allSolved = solved.every(v=>v!==null);
+  const mid=document.createElement('div');
+  mid.className='door mid'+(allSolved?'':' locked-mid');
+  const midIcon = !allSolved ? '🔒' : (bossDefeated ? '💰' : '🐙');
+  const midLabel = !allSolved ? 'ห้องสมบัติ' : (bossDefeated ? 'ห้องสมบัติ' : 'ปลาหมึกยักษ์');
+  mid.innerHTML = `<div class="door-shape">${midIcon}</div><div class="door-label">${midLabel}</div>`;
+  mid.onclick=()=>{
+    if(!allSolved){ parrotSay('ต้องไขโจทย์ให้ครบ 4 ห้องก่อนนะ!'); return; }
+    if(!bossDefeated){ enterBoss(); } else { enterTreasure(); }
+  };
+  row.appendChild(mid);
+
+  rightRooms.forEach(r=>row.appendChild(makeDoor(r)));
+}
+
+function parrotSay(text){
+  const s=document.getElementById('hall-speech');
+  s.textContent = text;
+}
+
+function goHallway(){
+  showScene('scene-hallway');
+  renderHallway();
+  renderHud();
+}
+
+/* ---------------- room / questions ---------------- */
+function enterRoom(id){
+  currentRoom = rooms[id];
+  qIndex = 0;
+  showScene('scene-room');
+  document.getElementById('room-porthole').textContent = currentRoom.icon;
+  document.getElementById('room-name').textContent = currentRoom.name;
+  renderQuestion();
+}
+
+function renderQuestion(){
+  questionHadMiss = false;
+  const q = currentRoom.questions[qIndex];
+  document.getElementById('equation').textContent = `${q.a} ${q.op} ${q.b} = ?`;
+  document.getElementById('feedback').textContent='';
+  const dots = document.getElementById('progress-dots');
+  dots.innerHTML='';
+  for(let i=0;i<3;i++){
+    const s=document.createElement('span');
+    if(i<qIndex) s.classList.add('done');
+    if(i===qIndex) s.classList.add('now');
+    dots.appendChild(s);
+  }
+  const cWrap = document.getElementById('choices');
+  cWrap.innerHTML='';
+  shuffle(q.choices).forEach(val=>{
+    const b=document.createElement('button');
+    b.className='choice-btn';
+    b.textContent=val;
+    b.onclick=()=>answer(val,q.ans,b);
+    cWrap.appendChild(b);
+  });
+}
+
+function answer(val, correct, btnEl){
+  const allBtns = document.querySelectorAll('#choices .choice-btn');
+  allBtns.forEach(b=>b.disabled=true);
+  const fb = document.getElementById('feedback');
+  if(val===correct){
+    soundCorrect();
+    addScore(questionHadMiss ? 5 : 10);
+    btnEl.classList.add('correct');
+    fb.textContent='เก่งมาก! ถูกต้อง ⭐';
+    setTimeout(()=>{
+      allBtns.forEach(b=>b.disabled=false);
+      if(qIndex<2){
+        qIndex++;
+        renderQuestion();
+      } else {
+        solved[currentRoom.id] = correct;
+        fb.textContent=`เจอเลขลับแล้ว! คือเลข ${correct} 🎉`;
+        setTimeout(goHallway, 1200);
+      }
+    }, 700);
+  } else {
+    soundWrong();
+    questionHadMiss = true;
+    mistakesTotal++;
+    btnEl.classList.add('wrong');
+    fb.textContent='ยังไม่ถูกนะ ลองอีกครั้ง! 💪';
+    setTimeout(()=>{
+      btnEl.classList.remove('wrong');
+      allBtns.forEach(b=>b.disabled=false);
+    }, 600);
+  }
+}
+
+/* ---------------- boss fight ---------------- */
+function enterBoss(){
+  bossIndex = 0;
+  showScene('scene-boss');
+  document.getElementById('boss-octopus').className = 'boss-octopus';
+  document.getElementById('boss-octopus').textContent = '🐙';
+  for(let i=0;i<3;i++){
+    const t = document.getElementById('tentacle-'+i);
+    t.classList.remove('cut');
+    t.querySelector('.t-icon').textContent = '🦵';
+  }
+  renderBossHp();
+  renderBossQuestion();
+}
+
+function renderBossHp(){
+  const hp = document.querySelectorAll('#boss-hp span');
+  hp.forEach((s,i)=> s.classList.toggle('gone', i<bossIndex));
+}
+
+function renderBossQuestion(){
+  bossHadMiss = false;
+  const q = bossQuestions[bossIndex];
+  document.getElementById('boss-equation').textContent = `${q.a} × ${q.b} = ?`;
+  document.getElementById('boss-feedback').textContent='';
+  const cWrap = document.getElementById('boss-choices');
+  cWrap.innerHTML='';
+  shuffle(q.choices).forEach(val=>{
+    const b=document.createElement('button');
+    b.className='choice-btn';
+    b.textContent=val;
+    b.onclick=()=>bossAnswer(val,q.ans,b);
+    cWrap.appendChild(b);
+  });
+}
+
+function bossAnswer(val, correct, btnEl){
+  const allBtns = document.querySelectorAll('#boss-choices .choice-btn');
+  allBtns.forEach(b=>b.disabled=true);
+  const fb = document.getElementById('boss-feedback');
+  const octo = document.getElementById('boss-octopus');
+  if(val===correct){
+    soundCorrect();
+    addScore(bossHadMiss ? 8 : 15);
+    btnEl.classList.add('correct');
+    fb.textContent='ฟันโดนหนวดแล้ว! ⚔️';
+    octo.classList.remove('hurt'); void octo.offsetWidth; octo.classList.add('hurt');
+    const t = document.getElementById('tentacle-'+bossIndex);
+    t.classList.add('cut');
+    t.querySelector('.t-icon').textContent='✂️';
+    setTimeout(()=>{
+      allBtns.forEach(b=>b.disabled=false);
+      bossIndex++;
+      renderBossHp();
+      if(bossIndex<3){
+        renderBossQuestion();
+      } else {
+        fb.textContent='ปราบปลาหมึกยักษ์ได้แล้ว! 🎉';
+        octo.classList.add('defeated');
+        bossDefeated = true;
+        setTimeout(enterTreasure, 1200);
+      }
+    }, 700);
+  } else {
+    soundWrong();
+    bossHadMiss = true;
+    mistakesTotal++;
+    btnEl.classList.add('wrong');
+    fb.textContent='พลาด! หนวดยังฟาดอยู่ ลองอีกครั้ง! 💦';
+    setTimeout(()=>{
+      btnEl.classList.remove('wrong');
+      allBtns.forEach(b=>b.disabled=false);
+    }, 600);
+  }
+}
+
+/* ---------------- QR share ---------------- */
+function enterQR(){
+  showScene('scene-qr');
+  const url = window.location.href;
+  document.getElementById('qr-url').textContent = url;
+  const box = document.getElementById('qr-box');
+  box.innerHTML = '';
+  if(window.QRCode){
+    new QRCode(box, { text:url, width:180, height:180, colorDark:'#0B2E3A', colorLight:'#ffffff' });
+  } else {
+    box.innerHTML = '<div style="color:#0B2E3A;font-weight:700;padding:10px;">โหลด QR ไม่สำเร็จ ลองใหม่อีกครั้ง</div>';
+  }
+}
+
+/* ---------------- treasure room ---------------- */
+let codeInput='';
+let treasureHadMiss=false;
+function enterTreasure(){
+  showScene('scene-treasure');
+  codeInput='';
+  treasureHadMiss=false;
+  document.getElementById('chest-emoji').textContent='🔒📦';
+  document.getElementById('chest-emoji').classList.remove('open');
+  document.getElementById('treasure-feedback').textContent='';
+  document.getElementById('code-hint').innerHTML =
+    'เลขลับที่เจอ: ' + solved.map(d=>`<b>${d}</b>`).join(' - ');
+  renderSlots();
+  renderKeypad();
+}
+function renderSlots(){
+  const slots = document.querySelectorAll('#keypad-slots div');
+  for(let i=0;i<4;i++) slots[i].textContent = codeInput[i] ?? '_';
+}
+function renderKeypad(){
+  const kp = document.getElementById('keypad');
+  kp.innerHTML='';
+  for(let n=0;n<=9;n++){
+    const b=document.createElement('button');
+    b.textContent=n;
+    b.onclick=()=>pressDigit(n);
+    kp.appendChild(b);
+  }
+  const clear=document.createElement('button');
+  clear.textContent='ล้าง'; clear.className='wide';
+  clear.onclick=()=>{codeInput=''; renderSlots();};
+  kp.appendChild(clear);
+  const confirm=document.createElement('button');
+  confirm.textContent='ยืนยัน'; confirm.className='confirm';
+  confirm.onclick=checkCode;
+  kp.appendChild(confirm);
+}
+function pressDigit(n){
+  if(codeInput.length>=4) return;
+  codeInput += n;
+  renderSlots();
+}
+function checkCode(){
+  const target = solved.join('');
+  const fb = document.getElementById('treasure-feedback');
+  if(codeInput===target){
+    soundWin();
+    addScore(treasureHadMiss ? 10 : 25);
+    document.getElementById('chest-emoji').textContent='🎉📦✨';
+    document.getElementById('chest-emoji').classList.add('open');
+    fb.textContent='เปิดสำเร็จ!! เจอสมบัติแล้ว!';
+    setTimeout(showWin, 1400);
+  } else {
+    soundWrong();
+    treasureHadMiss=true;
+    mistakesTotal++;
+    fb.textContent='รหัสยังไม่ถูก ลองดูเลขลับอีกครั้งนะ';
+    codeInput='';
+    setTimeout(renderSlots, 300);
+  }
+}
+
+/* ---------------- win scene ---------------- */
+function showWin(){
+  stopTimer();
+  showScene('scene-win');
+  document.getElementById('win-title').textContent = `เก่งมาก กัปตัน${playerName}!`;
+  document.getElementById('win-score').textContent = score;
+  document.getElementById('win-time').textContent = formatTime(elapsedSeconds);
+  const stars = mistakesTotal<=1 ? 3 : (mistakesTotal<=4 ? 2 : 1);
+  document.getElementById('win-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3-stars);
+  const subMsgs = {
+    3:'สุดยอด! ไม่พลาดเลยสักนิด เป็นนักล่าสมบัติมือทอง!',
+    2:'เก่งมาก! ผจญภัยได้อย่างกล้าหาญ!',
+    1:'ทำสำเร็จแล้ว! ลองเล่นอีกครั้งเพื่อเก็บดาวให้ครบ 3 ดวงนะ!'
+  };
+  document.getElementById('win-sub').textContent = subMsgs[stars];
+  saveBoardEntry(playerName, score, elapsedSeconds);
+
+  const layer = document.getElementById('confetti-layer');
+  layer.innerHTML='';
+  const emojis=['🎉','⭐','💰','🏴‍☠️','✨','🪙'];
+  for(let i=0;i<40;i++){
+    const c=document.createElement('div');
+    c.className='confetti';
+    c.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    c.style.left=(Math.random()*100)+'%';
+    c.style.animationDuration=(2.5+Math.random()*2.5)+'s';
+    c.style.animationDelay=(Math.random()*1.5)+'s';
+    layer.appendChild(c);
+  }
+}
+</script>
+</body>
+</html>
